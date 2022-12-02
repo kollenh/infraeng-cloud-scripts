@@ -98,7 +98,7 @@
 
                 #look for snapshots in a Backup Vault
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "   looking for snapshots in $VaultObj" -NoNewline
+                    Write-Host "   looking for $Vol_Id snapshots in $VaultObj" -NoNewline
                     $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
@@ -112,7 +112,21 @@
                         $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
                     }
                 } #end foreach Vault
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotTotal
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal
+
+                #look for snapshots in the DR Vault
+                Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
+                $DR_Vault = 'slawsitprodbackup-us-east-2-backup-vault'
+                try {
+                    $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                }
+                catch {
+                    continue
+                }
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $(($DR_VaultSnapshots | Measure-Object).Count)
+
+                #reset the credential
+                Initialize-AWSDefaultconfiguration -ProfileName $ProfileName
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
