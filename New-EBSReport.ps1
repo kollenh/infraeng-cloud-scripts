@@ -106,6 +106,7 @@
                 if ($Snapshots) {
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
                     Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
+                    
                     $Snapshot_Tags  = ($Snapshots | Sort-Object StartTime -Descending | Select-Object -First 1).Tags
                     $Backup_Plan    = ($Snapshot_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
                     $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
@@ -126,6 +127,7 @@
                     }
                     catch {
                         #Write-Host ", found 0" -ForegroundColor Yellow
+                        $VaultSnapshotCount = 0
                         #continue
                     }
                     Write-Host ", found $VaultSnapshotCount" -ForegroundColor Yellow
@@ -138,7 +140,7 @@
                 $DR_VaultSnapshots = $All_DR_Snapshots | Where-Object ResourceArn -eq $ObjResourceArn
                 $DR_Vault_Count    = ($DR_VaultSnapshots | Measure-Object).Count
 
-                Write-Host ", $DR_Vault_Count found" -ForegroundColor yellow -NoNewline
+                Write-Host ", found $DR_Vault_Count`n" -ForegroundColor yellow
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $DR_Vault_Count
 
                 #Append volume information to report
