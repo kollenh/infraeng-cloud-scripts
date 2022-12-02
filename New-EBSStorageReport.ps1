@@ -112,7 +112,7 @@
                     $Snapshot_Count = 0
                 }
                 Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
+                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count -PassThru
 
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
