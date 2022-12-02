@@ -87,7 +87,31 @@
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
 
                 #look for any copies in a Backup Vault
-
+                Write-Host " searching for Vaults in region [$Region]"
+                $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
+                foreach ($Vault in $BackupVaultCheck) {
+                    $BackupVaultName    = $Vault.BackupVaultName
+                    $Num_RecoveryPoints = $Vault.NumberOfRecoveryPoints
+                    $VaultSnapshotCount = 0
+                    Write-Host " ${BackupVaultName}:  " -ForegroundColor Cyan -NoNewline; Write-Host "$Num_RecoveryPoints objects"
+                    if ($Num_RecoveryPoints -eq 0) {
+                        continue
+                    }
+                    else {
+                        Write-Host "   looking for snapshots" -NoNewline
+                        $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
+                        try {
+                            $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $BackupVaultName -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                            $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
+                        }
+                        catch {
+                            Write-Host ", none found" -ForegroundColor Yellow
+                            continue
+                        }
+                        finally {
+                            $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotCount
+                        }
+                    }
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
