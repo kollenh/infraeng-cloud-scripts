@@ -56,9 +56,19 @@
         }
 
         $Volume_Report = [System.Collections.ArrayList]::New()
+        $Backup_Vaults = [System.Collections.ArrayList]::New()
         foreach ($Region in $RegionList) {
-            Write-Host "Searching $Region region for volumes.."
+            # Get vaults with data
+            Write-Host "Getting Backup vaults with data"
+            $BackupVaults = Get-BAKBackupVaultList -Region $Region
+            foreach ($Vault in $Backup_Vaults) {
+                if ($Vault.NumberOfRecoveryPoints -gt 0) {
+                   $Backup_Vaults.Add($Vault.BackupVaultName) | Out-Null 
+                }
+            }
+
             # Loop through each region and get all EBS volumes
+            Write-Host "Searching $Region region for volumes.."
             Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
@@ -86,31 +96,20 @@
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
 
-                #look for any copies in a Backup Vault
-                Write-Host " searching for Vaults in region [$Region]"
-                $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
-                foreach ($Vault in $BackupVaultCheck) {
-                    $BackupVaultName    = $Vault.BackupVaultName
-                    $Num_RecoveryPoints = $Vault.NumberOfRecoveryPoints
-                    $VaultSnapshotCount = 0
-                    Write-Host " ${BackupVaultName}:  " -ForegroundColor Cyan -NoNewline; Write-Host "$Num_RecoveryPoints objects"
-                    if ($Num_RecoveryPoints -eq 0) {
+                #look for snapshots in a Backup Vault
+                foreach ($Vault in $BackupVaults) {
+                    Write-Host "   looking for snapshots" -NoNewline
+                    $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
+                    try {
+                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                        $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
+                    }
+                    catch {
+                        Write-Host ", none found" -ForegroundColor Yellow
                         continue
                     }
-                    else {
-                        Write-Host "   looking for snapshots" -NoNewline
-                        $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
-                        try {
-                            $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $BackupVaultName -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
-                            $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
-                        }
-                        catch {
-                            Write-Host ", none found" -ForegroundColor Yellow
-                            continue
-                        }
-                        finally {
-                            $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotCount
-                        }
+                    finally {
+                        $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotCount
                     }
                 } #end foreach Vault
 
