@@ -79,7 +79,7 @@
             }
 
             # Loop through each region and get all EBS volumes
-            Write-Host "Searching [$Region] for volumes"
+            Write-Host "Searching [$Region] for volumes:"
             Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
@@ -112,7 +112,9 @@
                     $Snapshot_Count = 0
                 }
                 Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
-                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count -PassThru
+                Write-Host "--Updating InputObject with Snapshot_Count--" -ForegroundColor Green
+                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count -PassThru | Out-Null
+                $Volume_Info
 
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
@@ -124,14 +126,15 @@
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
                     }
                     catch {
-                        #Write-Host ", found 0" -ForegroundColor Yellow
                         $VaultSnapshotCount = 0
                         #continue
                     }
                     Write-Host ", found $VaultSnapshotCount" -ForegroundColor Yellow
                     $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
+                    Write-Host "--Total snapshots: $VaultSnapshotTotal--" -ForegroundColor Green
                 } #end foreach Vault
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal
+                Write-Host "--Updating InputObject with SnapshotTotal--" -ForegroundColor Green
+                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal -PassThru
 
                 #look for snapshots in the DR Vault
                 Write-Host "  >searching for snapshots in DR vault" -NoNewline
