@@ -95,25 +95,23 @@
                     Type        = $_.VolumeType
                     State       = $_.State
                     Created     = $_.CreateTime
-                    BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
+                    Frequency   = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
                 }
 
                 #find any associated snapshots
-                $Snapshot_Count = 0
                 $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
                 Write-Host "  >looking for associated snapshots" -NoNewline
                 $Snapshots = Get-EC2Snapshots -Filter $filter_by_volumeid -Region $Region
                 if ($Snapshots) {
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
-                    Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
-                    
                     $Snapshot_Tags  = ($Snapshots | Sort-Object StartTime -Descending | Select-Object -First 1).Tags
                     $Backup_Plan    = ($Snapshot_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
-                    $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan' -Value $Backup_Plan
+                    $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Backup Plan' -Value $Backup_Plan
                 }
                 else {
-                    Write-Host ", found 0" -ForegroundColor Yellow
+                    $Snapshot_Count = 0
                 }
+                Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
 
                 #look for snapshots in a Backup Vault
