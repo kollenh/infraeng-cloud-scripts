@@ -80,7 +80,7 @@
 
             # Loop through each region and get all EBS volumes
             Write-Host "Searching [$Region] for volumes:"
-            Get-EC2Volume -Region $Region | ForEach-Object {
+            Get-EC2Volume -Region $Region | Select-Object -first 2 | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
 
