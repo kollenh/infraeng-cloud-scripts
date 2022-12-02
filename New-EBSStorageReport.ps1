@@ -34,8 +34,8 @@
     # Get all snapshots in the DR vault
     Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
     Write-Host "`nGetting all snapshots from the DR vault"
-    $All_DR_Snapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName 'slawsitprodbackup-us-east-2-backup-vault' | `
-        Sort-Object ResourceArn,CompletionDate -Descending 
+#    $All_DR_Snapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName 'slawsitprodbackup-us-east-2-backup-vault' | `
+#        Sort-Object ResourceArn,CompletionDate -Descending 
 
     foreach ($ID in $AccountID) {
         try {
