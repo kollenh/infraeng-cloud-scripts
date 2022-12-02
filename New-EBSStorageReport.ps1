@@ -69,13 +69,14 @@
         $Volume_Report = [System.Collections.ArrayList]::New()
 
         # Build array of AWS Backup vaults that contain objects
-        $Backup_Vaults = @{}
+        $Backup_Vaults = [ordered]@{}
         foreach ($Region in $RegionList) {
             Write-Host "Searching [$Region] for Backup vaults with recovery points"
             $BackupVaults = Get-BAKBackupVaultList -Region $Region
             foreach ($Vault in $BackupVaults) {
                 if ($Vault.NumberOfRecoveryPoints -gt 0) {
-                   $Backup_Vaults.Add($Vault.BackupVaultName,$Region) | Out-Null 
+                    Add-Member -InputObject $Backup_Vaults -MemberType NoteProperty -Name 'VaultName' -Value $Vault.BackupVaultName
+                    Add-Member -InputObject $Backup_Vaults -MemberType NoteProperty -Name 'Region' -Value $Region
                 }
             }
         }
@@ -109,7 +110,7 @@
                     Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.BackupVaultName)" -NoNewline -ForegroundColor Cyan
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
-                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $($VaultObj.BackupVaultName) -ByResourceArn $ObjResourceArn -Region $($VaultObj.Region) -ErrorAction SilentlyContinue
+                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $($VaultObj.VaultName) -ByResourceArn $ObjResourceArn -Region $($VaultObj.Region) -ErrorAction SilentlyContinue
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
                     }
                     catch {
@@ -141,7 +142,6 @@
                     LocalVault  = $VaultSnapshotTotal
                     DRVault     = $DR_Vault_Count
                 }
-
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
