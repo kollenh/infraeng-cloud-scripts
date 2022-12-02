@@ -68,7 +68,7 @@
                     Zone        = $_.AvailabilityZone
                     VolumeId    = $Vol_Id 
                     Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
-                    Size        = $('{0:N0} GB' -f ($_.Size/1GB))
+                    Size        = $('{0:N0} GB' -f ($_.Size))
                     State       = $_.State
                     Created     = $_.CreateTime
                     BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
@@ -77,11 +77,19 @@
                 #find any associated snapshots
                 $Snapshot_Count = 0
                 $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
-                $Snapshots = Get-EC2Volume -Filter $filter_by_volumeid
+                $Snapshots = Get-EC2Snapshots -Filter $filter_by_volumeid -Region $Region
                 if ($Snapshots) {
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
+                    $Snapshot_Tags  = ($Snapshots | Sort-Object StartTime -Descending | Select-Object -First 1).Tags
+                    $Backup_Plan    = ($Snapshot_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
                 }
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
+
+                #look for any copies in a Backup Vault
+
+
+                #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
 
             } #end foreach Volume
