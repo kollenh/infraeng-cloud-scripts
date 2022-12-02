@@ -97,11 +97,11 @@
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
 
                 #look for snapshots in a Backup Vault
-                foreach ($Vault in $BackupVaults) {
-                    Write-Host "   looking for snapshots in $Vault" -NoNewline
+                foreach ($VaultObj in $BackupVaults) {
+                    Write-Host "   looking for snapshots in $VaultObj" -NoNewline
                     $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
                     try {
-                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
                     }
                     catch {
