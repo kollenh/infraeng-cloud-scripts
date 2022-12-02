@@ -118,14 +118,16 @@
                 Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
                 $DR_Vault = 'slawsitprodbackup-us-east-2-backup-vault'
                 try {
-                    Write-Host "`n  searching for snapshots in DR vault"
+                    Write-Host "   searching for snapshots in DR vault" -NoNewline
                     $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -Region us-east-2 `
                         -ErrorAction SilentlyContinue
                 }
                 catch {
                     #continue
                 }
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $(($DR_VaultSnapshots | Measure-Object).Count)
+                $DR_Vault_Count = ($DR_VaultSnapshots | Measure-Object).Count
+                Write-Host ", $DR_Vault_Count"
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $DR_Vault_Count
 
                 #reset the credential
                 Initialize-AWSDefaultconfiguration -ProfileName $ProfileName
