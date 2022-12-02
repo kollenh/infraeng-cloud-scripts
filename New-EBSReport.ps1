@@ -61,7 +61,7 @@
             # Get vaults with data
             Write-Host "Getting Backup vaults with data"
             $BackupVaults = Get-BAKBackupVaultList -Region $Region
-            foreach ($Vault in $Backup_Vaults) {
+            foreach ($Vault in $BackupVaults) {
                 if ($Vault.NumberOfRecoveryPoints -gt 0) {
                    $Backup_Vaults.Add($Vault.BackupVaultName) | Out-Null 
                 }
