@@ -92,7 +92,7 @@
                     VolumeId    = $Vol_Id 
                     Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
                     Size        = $('{0:N0} GB' -f ($_.Size))
-                    Type        = $_.Type
+                    Type        = $_.VolumeType
                     State       = $_.State
                     Created     = $_.CreateTime
                     BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
@@ -109,7 +109,7 @@
                     
                     $Snapshot_Tags  = ($Snapshots | Sort-Object StartTime -Descending | Select-Object -First 1).Tags
                     $Backup_Plan    = ($Snapshot_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
-                    $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan'   -Value $Backup_Plan
+                    $Volume_Info | Add-Member -MemberType NoteProperty -Name 'BAKPlan' -Value $Backup_Plan
                 }
                 else {
                     Write-Host ", found 0" -ForegroundColor Yellow
@@ -119,7 +119,7 @@
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "  >looking for snapshots in " -nonewline; write-host "$VaultObj" -NoNewline -ForegroundColor Cyan
+                    Write-Host "  >looking in " -nonewline; write-host "$VaultObj" -NoNewline -ForegroundColor Cyan
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
