@@ -86,18 +86,6 @@
 
                 Write-Host " Discovered volume [$Vol_Id]"
                 
-                $Volume_Info = [PSCustomObject]@{
-                    Account     = $ID
-                    Zone        = $_.AvailabilityZone
-                    VolumeId    = $Vol_Id 
-                    Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
-                    Size        = $('{0:N0} GB' -f ($_.Size))
-                    Type        = $_.VolumeType
-                    State       = $_.State
-                    Created     = $_.CreateTime
-                    Frequency   = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
-                }
-
                 #find any associated snapshots
                 $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
                 Write-Host "  >looking for associated snapshots" -NoNewline
@@ -111,10 +99,6 @@
                     $Snapshot_Count = 0
                 }
                 Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
-
-                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count -PassThru | Out-Null
-                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Backup Plan' -Value $Backup_Plan -PassThru | Out-Null
-                return $Volume_Info
 
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
@@ -131,18 +115,31 @@
                     }
                     Write-Host ", found $VaultSnapshotCount" -ForegroundColor Yellow
                     $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
-                    Write-Host "--Total snapshots: $VaultSnapshotTotal--" -ForegroundColor Green
                 } #end foreach Vault
                 Write-Host "--Updating InputObject with SnapshotTotal--" -ForegroundColor Green
-                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal -PassThru
 
                 #look for snapshots in the DR Vault
                 Write-Host "  >searching for snapshots in DR vault" -NoNewline
                 $DR_VaultSnapshots = $All_DR_Snapshots | Where-Object ResourceArn -eq $ObjResourceArn
                 $DR_Vault_Count    = ($DR_VaultSnapshots | Measure-Object).Count
-
                 Write-Host ", found $DR_Vault_Count`n" -ForegroundColor yellow
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $DR_Vault_Count
+
+                $Volume_Info = [PSCustomObject]@{
+                    Account     = $ID
+                    Zone        = $_.AvailabilityZone
+                    VolumeId    = $Vol_Id 
+                    Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
+                    Size        = $('{0:N0} GB' -f ($_.Size))
+                    Type        = $_.VolumeType
+                    State       = $_.State
+                    Created     = $_.CreateTime
+                    Frequency   = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
+                    BackupPlan  = $Backup_Plan
+                    Snapshots   = $Snapshot_Count
+                    LocalVault  = $VaultSnapshotTotal
+                    DRVault     = $DR_Vault_Count
+                }
+
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
