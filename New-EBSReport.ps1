@@ -25,25 +25,35 @@
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory=$False)]
-            [string[]]$AccountID  = @('138467534619','427878221502','761649062394')
+            [string[]]$AccountID  = @('138467534619','252302356329','427878221502','761649062394')
         ,[Parameter(Mandatory=$false)]
             [string[]]$RegionList = @('us-west-1','us-west-2','us-east-1','us-east-2')
 
     )
 
-# Credentials
+    # Get all snapshots in the DR vault
+    Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
+    $All_DR_Snapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName 'slawsitprodbackup-us-east-2-backup-vault' | `
+        Sort-Object ResourceArn,CompletionDate -Descending 
+
     foreach ($ID in $AccountID) {
         try {
+            # [below is temp, replace in production script]
             Switch ($ID) {
                 '427878221502'        {
-                    # this is the "new" Infrastructure account
+                    # "new" infrastructure account
                     $ProfileName = 'InfraProd'
                 }
                 '761649062394'      {
+                    # DR/backup account
                     $ProfileName = 'DRVault'
                 }
+                '252302356329' {
+                    # InfoSec account
+                    $ProfileName = 'SecOps'
+                }
                 default          {
-                    # this is the "legacy" Infrastructure account
+                    # "legacy" infrastructure account
                     $ProfileName = 'MyDefault' 
                 }
             }
@@ -79,6 +89,7 @@
                     VolumeId    = $Vol_Id 
                     Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
                     Size        = $('{0:N0} GB' -f ($_.Size))
+                    Type        = $_.Type
                     State       = $_.State
                     Created     = $_.CreateTime
                     BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
@@ -112,25 +123,16 @@
                         $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
                     }
                 } #end foreach Vault
+                Write-Host "$VaultSnapshotTotal found in LocalVaultSnapshots"
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal
 
                 #look for snapshots in the DR Vault
-                Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
-                $DR_Vault = 'slawsitprodbackup-us-east-2-backup-vault'
-                try {
-                    Write-Host "   searching for snapshots in DR vault" -NoNewline
-                    $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -Region us-east-2 `
-                        -ErrorAction SilentlyContinue
-                }
-                catch {
-                    #continue
-                }
-                $DR_Vault_Count = ($DR_VaultSnapshots | Measure-Object).Count
-                Write-Host ", $DR_Vault_Count"
-                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $DR_Vault_Count
+                Write-Host "   searching for snapshots in DR vault" -NoNewline
+                $DR_VaultSnapshots = $All_DR_Snapshots | Where-Object ResourceArn -eq $ObjResourceArn
+                $DR_Vault_Count    = ($DR_VaultSnapshots | Measure-Object).Count
 
-                #reset the credential
-                Initialize-AWSDefaultconfiguration -ProfileName $ProfileName
+                Write-Host ", $DR_Vault_Count" -ForegroundColor yellow -NoNewline; Write-Host " discovered"
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $DR_Vault_Count
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
