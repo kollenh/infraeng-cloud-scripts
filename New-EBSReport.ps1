@@ -63,16 +63,6 @@
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
                 
-                #find any associated snapshots
-                $Snapshot_Count = 0
-                $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
-                $Snapshots = Get-EC2Volume -Filter $filter_by_volumeid
-                if ($Snapshots) {
-                    $Snapshot_Count = ($Snapshots | Measure-Object).Count
-                }
-
-
-
                 $Volume_Info = [PSCustomObject]@{
                     Account     = $ID
                     Zone        = $_.AvailabilityZone
@@ -80,9 +70,20 @@
                     Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
                     Size        = $('{0:N0} GB' -f ($_.Size/1GB))
                     State       = $_.State
+                    Created     = $_.CreateTime
                     BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
-                    Snapshots   = $Snapshot_Count
                 }
+
+                #find any associated snapshots
+                $Snapshot_Count = 0
+                $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
+                $Snapshots = Get-EC2Volume -Filter $filter_by_volumeid
+                if ($Snapshots) {
+                    $Snapshot_Count = ($Snapshots | Measure-Object).Count
+                }
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
+
+
             } #end foreach Volume
             $Volume_Report.Add($Volume_Info) | Out-Null
         
