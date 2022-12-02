@@ -111,7 +111,7 @@
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.VaultName)" -NoNewline -ForegroundColor Cyan
+                    Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.VaultName)" -NoNewline -ForegroundColor Cyan; write-host " vault" -NoNewline
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $($VaultObj.VaultName) -ByResourceArn $ObjResourceArn -Region $($VaultObj.VaultRegion) -ErrorAction SilentlyContinue
@@ -126,7 +126,7 @@
                 } #end foreach Vault
 
                 #look for snapshots in the DR Vault
-                Write-Host "  >searching for snapshots in DR vault" -NoNewline
+                Write-Host "  >searching for snapshots in slawsitprodbackup-us-east-2-backup-vault vault" -NoNewline
                 $DR_VaultSnapshots = $All_DR_Snapshots | Where-Object ResourceArn -eq $ObjResourceArn
                 $DR_Vault_Count    = ($DR_VaultSnapshots | Measure-Object).Count
                 Write-Host ", found $DR_Vault_Count`n" -ForegroundColor yellow
