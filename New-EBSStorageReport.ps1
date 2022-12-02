@@ -134,8 +134,8 @@
                     State       = $_.State
                     Created     = $_.CreateTime
                     Frequency   = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
-                    BackupPlan  = $Backup_Plan
                     Snapshots   = $Snapshot_Count
+                    BackupPlan  = $Backup_Plan
                     LocalVault  = $VaultSnapshotTotal
                     DRVault     = $DR_Vault_Count
                 }
