@@ -33,9 +33,10 @@
 
     # Get all snapshots in the DR vault
     Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
-    Write-Host "`nGetting all snapshots from the DR vault"
+    Write-Host "`nGetting all snapshots from the DR vault" -NoNewline
     $All_DR_Snapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName 'slawsitprodbackup-us-east-2-backup-vault' | `
         Sort-Object ResourceArn,CompletionDate -Descending 
+    Write-Host ", found $(($All_DR_Snapshots | Measure-Object).Count)" -ForegroundColor Yellow
 
     foreach ($ID in $AccountID) {
         try {
@@ -110,7 +111,7 @@
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.BackupVaultName)" -NoNewline -ForegroundColor Cyan
+                    Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.VaultName)" -NoNewline -ForegroundColor Cyan
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $($VaultObj.VaultName) -ByResourceArn $ObjResourceArn -Region $($VaultObj.VaultRegion) -ErrorAction SilentlyContinue
