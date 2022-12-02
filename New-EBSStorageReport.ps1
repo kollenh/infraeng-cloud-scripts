@@ -67,18 +67,21 @@
         }
 
         $Volume_Report = [System.Collections.ArrayList]::New()
+
+        # Build array of AWS Backup vaults that contain objects
         $Backup_Vaults = [System.Collections.ArrayList]::New()
         foreach ($Region in $RegionList) {
-            # Get vaults with data
-            Write-Host "Getting Backup vaults with recovery points"
+            Write-Host "Searching [$Region] for Backup vaults with recovery points"
             $BackupVaults = Get-BAKBackupVaultList -Region $Region
             foreach ($Vault in $BackupVaults) {
                 if ($Vault.NumberOfRecoveryPoints -gt 0) {
-                   $Backup_Vaults.Add($Vault.BackupVaultName) | Out-Null 
+                   $Backup_Vaults.Add($Vault.BackupVaultName,$Region) | Out-Null 
                 }
             }
+        }
 
-            # Loop through each region and get all EBS volumes
+        # Loop through each region and get all EBS volumes
+        foreach ($Region in $RegionList) {
             Write-Host "Searching [$Region] for volumes:"
             Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
@@ -103,10 +106,10 @@
                 #look for snapshots in a Backup Vault
                 $VaultSnapshotTotal = 0
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "  >looking in " -nonewline; write-host "$VaultObj" -NoNewline -ForegroundColor Cyan
+                    Write-Host "  >looking in " -nonewline; write-host "$($VaultObj.BackupVaultName)" -NoNewline -ForegroundColor Cyan
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
-                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                        $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $($VaultObj.BackupVaultName) -ByResourceArn $ObjResourceArn -Region $($VaultObj.Region) -ErrorAction SilentlyContinue
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
                     }
                     catch {
