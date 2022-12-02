@@ -106,13 +106,13 @@
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
                     $Snapshot_Tags  = ($Snapshots | Sort-Object StartTime -Descending | Select-Object -First 1).Tags
                     $Backup_Plan    = ($Snapshot_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
-                    $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Backup Plan' -Value $Backup_Plan
                 }
                 else {
                     $Snapshot_Count = 0
                 }
                 Write-Host ", found $Snapshot_Count" -ForegroundColor Yellow
-                Write-Host "--Updating InputObject with Snapshot_Count--" -ForegroundColor Green
+
+                Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Backup Plan' -Value $Backup_Plan -PassThru | Out-Null
                 Add-Member -InputObject $Volume_Info -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count -PassThru | Out-Null
                 return $Volume_Info
 
