@@ -118,7 +118,9 @@
                 Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
                 $DR_Vault = 'slawsitprodbackup-us-east-2-backup-vault'
                 try {
-                    $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                    Write-Host ""
+                    $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -Region us-east-2 `
+                        -ErrorAction SilentlyContinue
                 }
                 catch {
                     #continue
