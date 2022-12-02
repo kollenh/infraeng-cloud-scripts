@@ -112,6 +112,7 @@
                             $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotCount
                         }
                     }
+                } #end foreach Vault
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
