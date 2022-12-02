@@ -33,7 +33,7 @@
 
     # Get all snapshots in the DR vault
     Initialize-AWSDefaultconfiguration -ProfileName 'DRVault'
-    Write-Host "Getting all snapshots from the DR vault"
+    Write-Host "`nGetting all snapshots from the DR vault"
     $All_DR_Snapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName 'slawsitprodbackup-us-east-2-backup-vault' | `
         Sort-Object ResourceArn,CompletionDate -Descending 
 
@@ -58,7 +58,7 @@
                     $ProfileName = 'MyDefault' 
                 }
             }
-            Write-Host "`nUsing profile" -nonewline; Write-Host " $ProfileName " -ForegroundColor Cyan -NoNewline; Write-Host "for connection to account $ID"
+            Write-Host "Using profile" -nonewline; Write-Host " $ProfileName " -ForegroundColor Cyan -NoNewline; Write-Host "for connection to account $ID"
             Initialize-AWSDefaultconfiguration -ProfileName $ProfileName
         }
         catch {
@@ -79,12 +79,12 @@
             }
 
             # Loop through each region and get all EBS volumes
-            Write-Host "Searching [$Region] for volumes.."
+            Write-Host "Searching [$Region] for volumes"
             Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
 
-                Write-Host " discovered volume [$Vol_Id]"
+                Write-Host " Discovered volume [$Vol_Id]"
                 
                 $Volume_Info = [PSCustomObject]@{
                     Account     = $ID
@@ -101,7 +101,7 @@
                 #find any associated snapshots
                 $Snapshot_Count = 0
                 $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
-                Write-Host "  looking for associated snapshots" -NoNewline
+                Write-Host "  >looking for associated snapshots" -NoNewline
                 $Snapshots = Get-EC2Snapshots -Filter $filter_by_volumeid -Region $Region
                 if ($Snapshots) {
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
@@ -116,26 +116,25 @@
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
 
                 #look for snapshots in a Backup Vault
+                $VaultSnapshotTotal = 0
                 foreach ($VaultObj in $Backup_Vaults) {
-                    Write-Host "   looking for snapshots in " -nonewline; write-host "$VaultObj" -NoNewline -ForegroundColor Cyan
+                    Write-Host "  >looking for snapshots in " -nonewline; write-host "$VaultObj" -NoNewline -ForegroundColor Cyan
                     $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${Vol_Id}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
                     }
                     catch {
-                        Write-Host ", found 0" -ForegroundColor Yellow
+                        #Write-Host ", found 0" -ForegroundColor Yellow
                         #continue
                     }
-                    finally {
-                        $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
-                    }
+                    Write-Host ", found $VaultSnapshotCount" -ForegroundColor Yellow
+                    $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
                 } #end foreach Vault
-                Write-Host ", found $VaultSnapshotTotal" -ForegroundColor Yellow
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'LocalVaultSnapshots' -Value $VaultSnapshotTotal
 
                 #look for snapshots in the DR Vault
-                Write-Host "   searching for snapshots in DR vault" -NoNewline
+                Write-Host "  >searching for snapshots in DR vault" -NoNewline
                 $DR_VaultSnapshots = $All_DR_Snapshots | Where-Object ResourceArn -eq $ObjResourceArn
                 $DR_Vault_Count    = ($DR_VaultSnapshots | Measure-Object).Count
 
