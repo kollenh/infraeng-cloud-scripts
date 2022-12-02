@@ -80,7 +80,7 @@
 
             # Loop through each region and get all EBS volumes
             Write-Host "Searching [$Region] for volumes:"
-            Get-EC2Volume -Region $Region | Select-Object -first 2 | ForEach-Object {
+            Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
                 $Vol_Tags    = $_.Tags
 
@@ -116,7 +116,6 @@
                     Write-Host ", found $VaultSnapshotCount" -ForegroundColor Yellow
                     $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
                 } #end foreach Vault
-                Write-Host "--Updating InputObject with SnapshotTotal--" -ForegroundColor Green
 
                 #look for snapshots in the DR Vault
                 Write-Host "  >searching for snapshots in DR vault" -NoNewline
