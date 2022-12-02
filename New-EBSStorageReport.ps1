@@ -69,7 +69,7 @@
         $Volume_Report = [System.Collections.ArrayList]::New()
 
         # Build array of AWS Backup vaults that contain objects
-        $Backup_Vaults = [System.Collections.ArrayList]::New()
+        $Backup_Vaults = @{}
         foreach ($Region in $RegionList) {
             Write-Host "Searching [$Region] for Backup vaults with recovery points"
             $BackupVaults = Get-BAKBackupVaultList -Region $Region
