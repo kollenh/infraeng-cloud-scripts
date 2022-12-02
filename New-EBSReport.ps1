@@ -99,7 +99,7 @@
                 #look for snapshots in a Backup Vault
                 foreach ($VaultObj in $Backup_Vaults) {
                     Write-Host "   looking for $Vol_Id snapshots in $VaultObj" -NoNewline
-                    $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
+                    $ObjResourceArn = "arn:aws:ec2:${Region}:${ID}:volume/${ObjectId}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $VaultObj -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
                         $VaultSnapshotCount = ($VaultSnapShots | Measure-Object).Count
