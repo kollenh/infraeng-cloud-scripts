@@ -106,7 +106,7 @@
                     }
                     catch {
                         Write-Host ", none found" -ForegroundColor Yellow
-                        continue
+                        #continue
                     }
                     finally {
                         $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
@@ -121,7 +121,7 @@
                     $DR_VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $DR_Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
                 }
                 catch {
-                    continue
+                    #continue
                 }
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'DRVaultSnapshots' -Value $(($DR_VaultSnapshots | Measure-Object).Count)
 
