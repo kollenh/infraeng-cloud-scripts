@@ -54,31 +54,40 @@
             throw "Unable to connect to the account"
             return
         }
+
         $Volume_Report = [System.Collections.ArrayList]::New()
         foreach ($Region in $RegionList) {
+            Write-Host "Searching $Region region for volumes.."
             # Loop through each region and get all EBS volumes
             Get-EC2Volume -Region $Region | ForEach-Object {
                 $Vol_Id      = $_.VolumeId
-                #list any snapshots
+                $Vol_Tags    = $_.Tags
                 
+                #find any associated snapshots
+                $Snapshot_Count = 0
+                $filter_by_volumeid = @(@{name='volume-id';values=$Vol_Id})
+                $Snapshots = Get-EC2Volume -Filter $filter_by_volumeid
+                if ($Snapshots) {
+                    $Snapshot_Count = ($Snapshots | Measure-Object).Count
+                }
 
-                $Volume_Ifno = [PSCustomObject]@{
+
+
+                $Volume_Info = [PSCustomObject]@{
+                    Account     = $ID
+                    Zone        = $_.AvailabilityZone
                     VolumeId    = $Vol_Id 
-                    Name        = $($_.tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
+                    Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
                     Size        = $('{0:N0} GB' -f ($_.Size/1GB))
                     State       = $_.State
-                    BAKFreq    = $($_.tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
+                    BAKFreq     = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
+                    Snapshots   = $Snapshot_Count
                 }
-            }
-
-
-
-    # for each volume:
-
-
-        #list any Backup Vault storage
+            } #end foreach Volume
+            $Volume_Report.Add($Volume_Info) | Out-Null
         
-        } #end foreach Region 
+        } #end foreach Region
         
     } #end foreach Account
-        
+    
+    return $Volume_Report
