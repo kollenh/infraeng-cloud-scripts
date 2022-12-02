@@ -98,7 +98,7 @@
 
                 #look for snapshots in a Backup Vault
                 foreach ($Vault in $BackupVaults) {
-                    Write-Host "   looking for snapshots" -NoNewline
+                    Write-Host "   looking for snapshots in $Vault" -NoNewline
                     $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
                     try {
                         $VaultSnapShots     = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $Vault -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
@@ -109,9 +109,10 @@
                         continue
                     }
                     finally {
-                        $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotCount
+                        $VaultSnapshotTotal = $VaultSnapshotTotal + $VaultSnapshotCount
                     }
                 } #end foreach Vault
+                $Volume_Info | Add-Member -MemberType NoteProperty -Name 'VaultSnapshots' -Value $VaultSnapshotTotal
 
                 #Append volume information to report
                 $Volume_Report.Add($Volume_Info) | Out-Null
