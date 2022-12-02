@@ -82,10 +82,9 @@
                     $Snapshot_Count = ($Snapshots | Measure-Object).Count
                 }
                 $Volume_Info | Add-Member -MemberType NoteProperty -Name 'Snapshots' -Value $Snapshot_Count
-
+                $Volume_Report.Add($Volume_Info) | Out-Null
 
             } #end foreach Volume
-            $Volume_Report.Add($Volume_Info) | Out-Null
         
         } #end foreach Region
         
