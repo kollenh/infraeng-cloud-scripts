@@ -136,7 +136,7 @@
                     Zone        = $_.AvailabilityZone
                     VolumeId    = $Vol_Id 
                     Name        = $($Vol_Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
-                    Size        = $('{0:N0} GB' -f ($_.Size))
+                    'Size(GB)'  = $('{0:N0}' -f ($_.Size))
                     Type        = $_.VolumeType
                     State       = $_.State
                     Created     = $_.CreateTime
