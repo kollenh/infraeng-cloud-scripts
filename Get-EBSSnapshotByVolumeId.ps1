@@ -4,7 +4,7 @@
 
     .DESCRIPTION
         
-    .PARAMETER VolumeId
+    .PARAMETER ObjectId
         ID of the volume from which the snapshots were taken; all associated snapshots will be returned
 
     .PARAMETER SourceRegion
@@ -14,7 +14,7 @@
         Switch to indicate the script should post to a different Teams channel for testing
     
     .EXAMPLE
-        Get-EBSSnapshotByVolumeId 
+        Get-EBSSnapshotByObjectId 
 
     .NOTES
 
@@ -25,13 +25,13 @@
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory=$True)]
-            [string]$VolumeId
+            [string]$ObjectId
+        ,[Parameter(Mandatory=$False)]
+            [switch]$Instance
         ,[Parameter(Mandatory=$False)]
             [string]$SourceRegion = 'us-west-2'
         ,[Parameter(Mandatory=$False)]
             [string]$SourceAccount = '138467534619'
-        ,[Parameter(Mandatory=$false)]
-            [switch]$Test
         ,[Parameter(Mandatory=$False)]
             [string[]]$AccountID  = @('138467534619','427878221502','761649062394')
         ,[Parameter(Mandatory=$false)]
@@ -39,9 +39,9 @@
     )
 
     $Snapshot_Report = [System.Collections.ArrayList]::New()
-    foreach ($Account in $AccountID) {
+    foreach ($ID in $AccountID) {
         try {
-            Switch ($Account) {
+            Switch ($ID) {
                 '427878221502'        {
                     # this is the "new" Infrastructure account
                     $ProfileName = 'InfraProd'
@@ -54,7 +54,7 @@
                     $ProfileName = 'MyDefault' 
                 }
             }
-            Write-Host "`nUsing $ProfileName for connection to $Account" -ForegroundColor Yellow
+            Write-Host "`nUsing profile" -nonewline; Write-Host " $ProfileName " -ForegroundColor Cyan -NoNewline; Write-Host "for connection to account $ID"
             Initialize-AWSDefaultconfiguration -ProfileName $ProfileName
         }
         catch {
@@ -62,36 +62,38 @@
             return
         }
         foreach ($Region in $RegionList) {
-            Write-Host "Searching for Vaults in $Region region..."
+            Write-Host "Searching for Vaults in region [$Region]"
             $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
             foreach ($Vault in $BackupVaultCheck) {
                 $BackupVaultName    = $Vault.BackupVaultName
                 $Num_RecoveryPoints = $Vault.NumberOfRecoveryPoints
+                Write-Host " ${BackupVaultName}: " -ForegroundColor Cyan -NoNewline; Write-Host "$Num_RecoveryPoints objects"
                 if ($Num_RecoveryPoints -eq 0) {
-                    Write-Host "  no recovery points found in vault $BackupVaultName"
                     continue
                 }
                 else {
-                    Write-Host "Searching for snapshots in "-nonewline; Write-Host "$BackupVaultName..." -ForegroundColor Yellow
-                    $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${VolumeId}"
+                    Write-Host "   looking for snapshots in AWS Backup" -NoNewline
+                    $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
+                    if ($instance) {
+                        $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:instance/${ObjectId}"
+                    }
                     try {
-                        $SnapShots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $BackupVaultName -ByResourceArn $ObjResourceArn -ErrorAction SilentlyContinue
+                        $VaultSnapshots = Get-BAKRecoveryPointsByBackupVaultList -BackupVaultName $BackupVaultName -ByResourceArn $ObjResourceArn -Region $Region -ErrorAction SilentlyContinue
                     }
                     catch {
-                        Write-Host "  no recovery points for $VolumeId found in vault $BackupVaultName"
+                        Write-Host ", none found" -ForegroundColor Yellow
                         continue
                     }
-                    if ($SnapShots) {
-                        Write-Host "  $(($SnapShots | Measure-Object).Count) recovery objects were discovered" -ForegroundColor Cyan
-                        Write-Host "  building report..."
-                        foreach ($Snapshot in $SnapShots) {
+                    if ($VaultSnapshots) {
+                        Write-Host ", $(($VaultSnapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
+                        foreach ($Snapshot in $VaultSnapshots) {
                             $SnapshotTags = Get-BAKResourceTag -Region $Region -ResourceArn $Snapshot.RecoveryPointArn
                             $SnapshotInfo = [PSCustomObject]@{
-                                Account     = $Account
-                                Region      = $Region
+                                VaultAccount= $ID
+                                VaultRegion = $Region
                                 Vault       = $BackupVaultName
                                 Volume      = $($SnapshotTags.GetEnumerator() | Where-Object Key -eq 'Name').Value
-                                Size        = $('{0:N0} GB' -f ($Snapshot.BackupSizeInBytes/1GB))
+                                'Size (GB)' = $('{0:N0}' -f ($Snapshot.BackupSizeInBytes/1GB))
                                 Created     = $Snapshot.CreationDate
                                 ResourceArn = $Snapshot.ResourceArn
                                 RcrPointArn = $Snapshot.RecoveryPointArn
@@ -100,9 +102,35 @@
                             $Snapshot_Report.Add($SnapshotInfo) | Out-Null
                         }
                     }
+                    else {
+                        Write-Host ", none found" -ForegroundColor Yellow
+                    }
                 }
 
             } # end foreach Vault
+
+            Write-Host "Searching for Snapshots in region [$Region]" -NoNewline
+            $Vol_Snapshots = Get-EC2Snapshots -Filter @(@{name='volume-id';values=$ObjectId}) -Region $Region
+            if ($Vol_Snapshots) {
+                Write-Host ", $(($Vol_Snapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
+                foreach ($Snapshot in $Vol_Snapshots) {
+                    $SnapshotInfo = [PSCustomObject]@{
+                        VaultAccount= $ID
+                        VaultRegion = $Region
+                        Vault       = 'n/a'
+                        Volume      = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
+                        'Size (GB)' = $('{0:N0}' -f ($Snapshot.VolumeSize))
+                        Created     = $Snapshot.StartTime
+                        ResourceArn = $Snapshot.SnapshotId
+                        RcrPointArn = 'n/a'
+                        BackupPlan  = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
+                    }
+                    $Snapshot_Report.Add($SnapshotInfo) | Out-Null                    
+                }
+            }
+            else {
+                Write-Host ", none found" -ForegroundColor Yellow
+            }
 
         } # end foreach Region
 
