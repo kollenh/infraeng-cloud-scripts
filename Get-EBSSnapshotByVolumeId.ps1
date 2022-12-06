@@ -62,7 +62,7 @@
             return
         }
         foreach ($Region in $RegionList) {
-            Write-Host "Searching for Vaults in region [$Region]"
+            Write-Host "Searching for Vaults in [$Region]"
             $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
             foreach ($Vault in $BackupVaultCheck) {
                 $BackupVaultName    = $Vault.BackupVaultName
@@ -72,7 +72,7 @@
                     continue
                 }
                 else {
-                    Write-Host "   looking for snapshots in AWS Backup" -NoNewline
+                    Write-Host "   looking for snapshots in Backup vault" -NoNewline
                     $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:volume/${ObjectId}"
                     if ($instance) {
                         $ObjResourceArn = "arn:aws:ec2:${SourceRegion}:${SourceAccount}:instance/${ObjectId}"
@@ -109,7 +109,7 @@
 
             } # end foreach Vault
 
-            Write-Host "Searching for Snapshots in region [$Region]" -NoNewline
+            Write-Host "Searching for Snapshots in [$Region]" -NoNewline
             $Vol_Snapshots = Get-EC2Snapshots -Filter @(@{name='volume-id';values=$ObjectId}) -Region $Region
             if ($Vol_Snapshots) {
                 Write-Host ", $(($Vol_Snapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
