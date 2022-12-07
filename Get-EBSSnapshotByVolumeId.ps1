@@ -88,7 +88,7 @@
             Write-Host "Searching [$Region] for Vaults.." -NoNewline
             $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
             if ($BackupVaultCheck) {
-                Write-Host "    $(($BackupVaultCheck | Measure-Object).Count) discovered" -ForegroundColor Yellow
+                Write-Host "    $(($BackupVaultCheck | Measure-Object).Count)" -ForegroundColor Yellow
                 foreach ($Vault in $BackupVaultCheck) {
                     $BackupVaultName    = $Vault.BackupVaultName
                     $Num_RecoveryPoints = $Vault.NumberOfRecoveryPoints
@@ -135,7 +135,7 @@
                 } # end foreach Vault
             }
             else {
-                Write-Host "    none found" -ForegroundColor Yellow
+                Write-Host "    0" -ForegroundColor Yellow
             }
 
         } # end foreach Region
