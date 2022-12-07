@@ -62,7 +62,30 @@
             return
         }
         foreach ($Region in $RegionList) {
-            Write-Host "Searching for Vaults in [$Region]"
+            Write-Host "Searching for Snapshots in [$Region]" -NoNewline
+            $Vol_Snapshots = Get-EC2Snapshots -Filter @(@{name='volume-id';values=$ObjectId}) -Region $Region
+            if ($Vol_Snapshots) {
+                Write-Host ", $(($Vol_Snapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
+                foreach ($Snapshot in $Vol_Snapshots) {
+                    $SnapshotInfo = [PSCustomObject]@{
+                        VaultAccount= $ID
+                        VaultRegion = $Region
+                        Vault       = 'n/a'
+                        Volume      = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
+                        'Size (GB)' = $('{0:N0}' -f ($Snapshot.VolumeSize))
+                        Created     = $Snapshot.StartTime
+                        ResourceArn = $Snapshot.SnapshotId
+                        RcrPointArn = 'n/a'
+                        Note        = "Storage tier: $($Snapshot.StorageTier)"
+                    }
+                    $Snapshot_Report.Add($SnapshotInfo) | Out-Null                    
+                } # end foreach volume snapshot
+            }
+            else {
+                Write-Host ", none found" -ForegroundColor Yellow
+            }
+
+            Write-Host "Searching for Vaults    in [$Region]"
             $BackupVaultCheck = Get-BAKBackupVaultList -Region $Region
             foreach ($Vault in $BackupVaultCheck) {
                 $BackupVaultName    = $Vault.BackupVaultName
@@ -97,7 +120,7 @@
                                 Created     = $Snapshot.CreationDate
                                 ResourceArn = $Snapshot.ResourceArn
                                 RcrPointArn = $Snapshot.RecoveryPointArn
-                                BackupPlan  = $($SnapshotTags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value
+                                Note        = "Backup Plan: $(($SnapshotTags.GetEnumerator() | Where-Object Key -eq 'Backup Plan').Value)"
                             }
                             $Snapshot_Report.Add($SnapshotInfo) | Out-Null
                         }
@@ -108,29 +131,6 @@
                 }
 
             } # end foreach Vault
-
-            Write-Host "Searching for Snapshots in [$Region]" -NoNewline
-            $Vol_Snapshots = Get-EC2Snapshots -Filter @(@{name='volume-id';values=$ObjectId}) -Region $Region
-            if ($Vol_Snapshots) {
-                Write-Host ", $(($Vol_Snapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
-                foreach ($Snapshot in $Vol_Snapshots) {
-                    $SnapshotInfo = [PSCustomObject]@{
-                        VaultAccount= $ID
-                        VaultRegion = $Region
-                        Vault       = 'n/a'
-                        Volume      = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
-                        'Size (GB)' = $('{0:N0}' -f ($Snapshot.VolumeSize))
-                        Created     = $Snapshot.StartTime
-                        ResourceArn = $Snapshot.SnapshotId
-                        RcrPointArn = 'n/a'
-                        BackupPlan  = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Backup Frequency').Value
-                    }
-                    $Snapshot_Report.Add($SnapshotInfo) | Out-Null                    
-                }
-            }
-            else {
-                Write-Host ", none found" -ForegroundColor Yellow
-            }
 
         } # end foreach Region
 
