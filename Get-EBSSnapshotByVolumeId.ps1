@@ -70,7 +70,7 @@
                     $SnapshotInfo = [PSCustomObject]@{
                         VaultAccount= $ID
                         VaultRegion = $Region
-                        Vault       = 'n/a'
+                        Vault       = 'Snapshot'
                         Volume      = $($Snapshot.Tags.GetEnumerator() | Where-Object Key -eq 'Name').Value
                         'Size (GB)' = $('{0:N0}' -f ($Snapshot.VolumeSize))
                         Created     = $Snapshot.StartTime
@@ -110,7 +110,7 @@
                             continue
                         }
                         if ($VaultSnapshots) {
-                            Write-Host "`t $(($VaultSnapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
+                            Write-Host "  $(($VaultSnapshots | Measure-Object).Count) discovered" -ForegroundColor Yellow
                             foreach ($Snapshot in $VaultSnapshots) {
                                 $SnapshotTags = Get-BAKResourceTag -Region $Region -ResourceArn $Snapshot.RecoveryPointArn
                                 $SnapshotInfo = [PSCustomObject]@{
