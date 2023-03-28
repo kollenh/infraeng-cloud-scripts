@@ -102,7 +102,7 @@
         }
     }
     
-    Write-Host "Volumes accounted for $('{0:N0}' -f $SnapShotTotal) snapshots" -ForegroundColor Cyan
+    Write-Host "Volumes accounted for $('{0:N0}' -f $SnapShotTotal) of $(($Snapshots | Meausre-Object).Count) snapshots" -ForegroundColor Cyan
 
     $Volume_List | Export-Csv c:\IT\reports\Volumes.csv -NoTypeInformation
     $Snapshot_List | Export-Csv c:\IT\reports\Snapshots.csv -NoTypeInformation
