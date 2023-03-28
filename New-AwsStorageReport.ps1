@@ -45,9 +45,18 @@
     $Snapshot_List = [System.Collections.ArrayList]::New()
     foreach ($account in $AccountID) {
         Switch ($Account) {
-            '252302356329'  {$AWS_Profile = 'SecOps'}
-            '427878221502'  {$AWS_Profile = 'InfraProd'}
-            default         {$AWS_Profile = 'MyDefault'}
+            '252302356329'  {
+                $AWS_Profile = 'SecOps'
+                $AccountName = 'SecOps'
+            }
+            '427878221502'  {
+                $AWS_Profile = 'InfraProd'
+                $AccountName = 'Infra Shared'
+            }
+            default         {
+                $AWS_Profile = 'MyDefault'
+                $AccountName = 'Legacy Prod'
+            }
         }
         
         foreach ($Region in $RegionList) {
@@ -61,7 +70,7 @@
             foreach ($V in $Volumes) {
                 $SnapCount = ($Snapshots | Where-Object VolumeId -eq $($v.VolumeId) | Measure-Object).Count
                 $Object = [PSCustomObject]@{
-                    Account     = $Account_Names[[int]$Account]
+                    Account     = $AccountName
                     Region      = $Region
                     VolID       = $V.VolumeId
                     Name        = ($V.Tags | Where-Object Key -eq 'Name').Value
@@ -78,7 +87,7 @@
 
             $Snapshots | Group-Object VolumeId | Foreach-Object {
                 $Grouped_Snapshot = [PSCustomObject]@{
-                    Account     = $Account_Names[[int]$Account]
+                    Account     = $AccountName
                     Region      = $Region
                     Number      = $_.Count
                     Name        = $_.Name
