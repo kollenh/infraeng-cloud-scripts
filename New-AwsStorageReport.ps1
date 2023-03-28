@@ -36,7 +36,8 @@
     #SecOps    = InfoSec
     #DRVault   = DR Account
 
-    $Volume_List = [System.Collections.ArrayList]::New()
+    $Volume_List   = [System.Collections.ArrayList]::New()
+    $Snapshot_List = [System.Collections.ArrayList]::New()
     foreach ($Region in $RegionList) {
         Initialize-AWSDefaultconfiguration -ProfileName MyDefault -Region $Region
 
@@ -63,7 +64,17 @@
             $SnapShotTotal  = $SnapShotTotal + $SnapCount
         }
 
+        $Grouped_Snapshots  = $Snapshots | Group-Object VolumeId | Select-Object `
+            Count,
+            Name,
+            @{Label='Description';Expression={$_.Group[-1].Description}},
+            @{Label='Size';Expression={$_.Group[-1].VolumeSize}},
+            @{Label='Tier';Expression={$_.Group[-1].StorageTier}},
+            @{Label='State';Expression={$_.Group[-1].State}},
+            @{Label='Started';Expression={$_.Group[-1].StartTime}}
+        $Snapshot_List.Add($Grouped_Snapshots) | Out-Null
     }
-    Write-Host "Volumes accounted for $SnapShotTotal snapshots"
-    return $Volume_List
-    # 
+    Write-Host "Volumes accounted for $('{0:N0}' -f $SnapShotTotal) snapshots" -ForegroundColor Cyan
+    $Volume_List
+    $Snapshot_List
+    
