@@ -47,6 +47,7 @@
         $Snapshots  = Get-EC2Snapshots -OwnerId self -Region $Region
     
         foreach ($V in $Volumes) {
+            $SnapCount = ($Snapshots | Where-Object VolumeId -eq $($v.VolumeId) | Measure-Object).Count
             $Object = [PSCustomObject]@{
                 Region      = $Region
                 VolID       = $V.VolumeId
@@ -56,12 +57,13 @@
                 State       = $V.State
                 VolumeType  = $V.VolumeType
                 Size        = $V.Size
-                Snapshots   = ($Snapshots | Where-Object VolumeId -eq $($v.VolumeId) | Measure-Object).Count
+                Snapshots   = $SnapCount
             }
             $Volume_List.Add($Object) | Out-Null
+            $SnapShotTotal  = $SnapShotTotal + $SnapCount
         }
 
     }
-
+    Write-Host "Volumes accounted for $SnapShotTotal snapshots"
     return $Volume_List
     # 
