@@ -90,6 +90,6 @@
     
     Write-Host "Volumes accounted for $('{0:N0}' -f $SnapShotTotal) snapshots" -ForegroundColor Cyan
 
-    $Volume_List
-    $Snapshot_List
+    $Volume_List | Export-Csv c:\IT\reports\Volumes.csv -NoTypeInformation
+    $Snapshot_List | Export-Csv c:\IT\reports\Snapshots.csv -NoTypeInformation
     
