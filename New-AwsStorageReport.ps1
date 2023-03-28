@@ -73,7 +73,7 @@
 
             $Snapshots | Group-Object VolumeId | Foreach-Object {
                 $Grouped_Snapshot = [PSCustomObject]@{
-                    Account     = $AccountID
+                    Account     = $Account
                     Region      = $Region
                     Number      = $_.Count
                     Name        = $_.Name
