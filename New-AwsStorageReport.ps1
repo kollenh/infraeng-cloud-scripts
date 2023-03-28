@@ -35,11 +35,6 @@
     #InfraProd = Shared Svcs
     #SecOps    = InfoSec
     #DRVault   = DR Account
-    $Account_Names = @{
-        138467534619 = "Legacy Prod";
-        252302356329 = 'SecOps';
-        427878221502 = 'Infra Shared';
-    }
 
     $Volume_List   = [System.Collections.ArrayList]::New()
     $Snapshot_List = [System.Collections.ArrayList]::New()
