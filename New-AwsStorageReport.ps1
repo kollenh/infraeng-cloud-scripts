@@ -35,6 +35,11 @@
     #InfraProd = Shared Svcs
     #SecOps    = InfoSec
     #DRVault   = DR Account
+    $Account_Names = @{
+        138467534619 = "Legacy Prod";
+        252302356329 = 'SecOps';
+        427878221502 = 'Infra Shared';
+    }
 
     $Volume_List   = [System.Collections.ArrayList]::New()
     $Snapshot_List = [System.Collections.ArrayList]::New()
@@ -56,7 +61,7 @@
             foreach ($V in $Volumes) {
                 $SnapCount = ($Snapshots | Where-Object VolumeId -eq $($v.VolumeId) | Measure-Object).Count
                 $Object = [PSCustomObject]@{
-                    Account     = $Account
+                    Account     = $Account_Names[[int]$Account]
                     Region      = $Region
                     VolID       = $V.VolumeId
                     Name        = ($V.Tags | Where-Object Key -eq 'Name').Value
@@ -73,7 +78,7 @@
 
             $Snapshots | Group-Object VolumeId | Foreach-Object {
                 $Grouped_Snapshot = [PSCustomObject]@{
-                    Account     = $Account
+                    Account     = $Account_Names[[int]$Account]
                     Region      = $Region
                     Number      = $_.Count
                     Name        = $_.Name
