@@ -58,8 +58,8 @@
                 Size        = $V.Size
                 Snapshots   = ($Snapshots | Where-Object VolumeId -eq $($vol.VolumeId) | Measure-Object).Count
             }
+            $Volume_List.Add($Object) | Out-Null
         }
-        $Volume_List.Add($Object)
 
     }
 
