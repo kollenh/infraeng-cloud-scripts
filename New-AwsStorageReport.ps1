@@ -56,7 +56,7 @@
                 State       = $V.State
                 VolumeType  = $V.VolumeType
                 Size        = $V.Size
-                Snapshots   = ($Snapshots | Where-Object VolumeId -eq $($vol.VolumeId) | Measure-Object).Count
+                Snapshots   = ($Snapshots | Where-Object VolumeId -eq $($v.VolumeId) | Measure-Object).Count
             }
             $Volume_List.Add($Object) | Out-Null
         }
