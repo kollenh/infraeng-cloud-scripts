@@ -67,7 +67,7 @@
                     Size        = $V.Size
                     Snapshots   = $SnapCount
                 }
-                $Volume_List.Add($Object) | Out-Nul
+                $Volume_List.Add($Object) | Out-Null
                 $SnapShotTotal  = $SnapShotTotal + $SnapCount
             }
 
