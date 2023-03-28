@@ -63,7 +63,7 @@
             Initialize-AWSDefaultconfiguration -ProfileName $AWS_Profile -Region $Region
 
             # Get the data
-    #        $Tags       = Get-EC2Tag
+            $Tags       = Get-EC2Tag
             $Volumes    = Get-EC2Volume
             $Snapshots  = Get-EC2Snapshots -OwnerId self -Region $Region
         
@@ -90,7 +90,8 @@
                     Account     = $AccountName
                     Region      = $Region
                     Number      = $_.Count
-                    Name        = $_.Name
+                    Volume      = $_.Name
+                    Name        = $($Tags | Where-Object ResourceId -eq $_.Name | Where-Object Key -eq 'Name').Value
                     Description = $_.Group[-1].Description
                     Size        = $_.Group[-1].VolumeSize
                     Tier        = $_.Group[-1].StorageTier
