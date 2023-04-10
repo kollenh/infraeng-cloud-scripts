@@ -26,7 +26,7 @@
         [Parameter(Mandatory=$False)]
             [string[]]$AccountID  = @('138467534619','252302356329','427878221502')
         ,[Parameter(Mandatory=$false)]
-            [string[]]$RegionList = @('us-west-1','us-west-2','us-east-1','us-east-2')
+            [string[]]$RegionList = @('us-west-1','us-west-2','us-east-1','us-east-2','eu-west-1')
 
     )
 
